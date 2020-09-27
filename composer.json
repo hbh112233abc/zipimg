@@ -1,0 +1,24 @@
+{
+    "name": "bingher/zipimg",
+    "description": "zip images",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "hbh112233abc",
+            "email": "hbh112233abc@163.com"
+        }
+    ],
+    "require": {
+        "php":">7.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "bingher\\zipimg\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    }
+}
