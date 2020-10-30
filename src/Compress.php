@@ -21,6 +21,8 @@ abstract class Compress
     protected $config = [
         'min_quality' => 60, //图片压缩质量
         'max_quality' => 80, //图片压缩质量
+        'backup'      => false, //是否备份图片
+        'backup_dir'  => '', //图片备份目录,未配置与源文件同目录
     ];
 
     /**
@@ -95,7 +97,7 @@ abstract class Compress
      * @param int $max 最高质量
      * @param int $min 最低质量(默认60)
      *
-     * @return void
+     * @return self
      */
     public function quality(int $max, int $min = 0)
     {
@@ -103,6 +105,28 @@ abstract class Compress
         if ($min > 0) {
             $this->config['min_quality'] = $max;
         }
+        return $this;
+    }
+
+    /**
+     * 是否备份源文件
+     *
+     * @param bool   $flag 备份标识:bool表示开关
+     * @param string $dir  备份目录
+     *
+     * @return self
+     */
+    public function backup(bool $flag = true, string $dir = '')
+    {
+        $this->config['backup'] = $flag;
+
+        if (!empty($dir)) {
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $this->config['backup_dir'] = $dir;
+        }
+        return $this;
     }
 
     /**
@@ -110,11 +134,12 @@ abstract class Compress
      *
      * @param string $file 输入文件路径
      *
-     * @return void
+     * @return self
      */
     public function input($file)
     {
         $this->input = $file;
+        return $this;
     }
 
     /**
@@ -122,11 +147,12 @@ abstract class Compress
      *
      * @param string $file 输出文件路径
      *
-     * @return void
+     * @return self
      */
     public function output($file)
     {
         $this->output = $file;
+        return $this;
     }
 
     /**
@@ -136,7 +162,6 @@ abstract class Compress
      */
     public function checkInput()
     {
-
         if (!is_file($this->input)) {
             throw new \Exception('input file not exists');
         }
@@ -161,6 +186,44 @@ abstract class Compress
     }
 
     /**
+     * 路径全转为/分隔符
+     *
+     * @param string $path 文件路径
+     *
+     * @return string       转换后路径
+     */
+    public static function safePath($path)
+    {
+        $path = str_replace('\\', '/', $path);
+        return escapeshellarg($path);
+    }
+
+    /**
+     * 备份文件
+     *
+     * @return void
+     */
+    public function backupSrcFile()
+    {
+        if (!$this->config['backup']) {
+            //未开启备份
+            return;
+        }
+        $backupDir  = $this->config['backup_dir'];
+        $backupName = basename($this->input);
+        if (empty($backupDir)) {
+            $backupDir  = dirname($this->input);
+            $backupName = $backupName . '.bk';
+        }
+        $backupFile = $backupDir . DIRECTORY_SEPARATOR . $backupName;
+        if (is_file($backupFile)) {
+            //已经有备份文件了
+            return;
+        }
+        copy($this->input, $backupFile);
+    }
+
+    /**
      * 压缩操作
      *
      * @param string $input 输入文件路径
@@ -174,13 +237,10 @@ abstract class Compress
         }
         $this->checkInput();
 
+        $this->backupSrcFile();
+
         $cmd = $this->parseCmd();
-
-        $result = shell_exec($cmd);
-        if (!$result) {
-            throw new \Exception('compressed failed. Is ' . __CLASS__ . ' installed?');
-        }
-
+        shell_exec($cmd);
         return $this->output;
     }
 }

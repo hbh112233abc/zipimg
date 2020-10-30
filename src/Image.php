@@ -45,6 +45,20 @@ class Image
     private $_config = [];
 
     /**
+     * 支持压缩的图片格式
+     *
+     * @var array
+     */
+    protected $zipExts = ['png', 'jpg', 'jpeg', 'tga', 'bmp', 'ppm'];
+
+    /**
+     * 错误消息
+     *
+     * @var string
+     */
+    protected $error = '';
+
+    /**
      * 构造器
      *
      * @param array $config 配置参数
@@ -67,15 +81,29 @@ class Image
     public function zip($input, $output = '')
     {
         $ext = strtolower(pathinfo($input, PATHINFO_EXTENSION));
-        if ($ext == 'png') {
-            $this->dirver = new Pngguant($this->_config);
+        if (!in_array($ext, $this->zipExts)) {
+            $this->error = '不支持的图片格式';
+            return false;
         }
-        if (in_array($ext, ['tga', 'bmp', 'ppm', 'jpeg'])) {
-            $this->dirver = new Mozjpeg($this->_config);
+        if ($ext == 'png') {
+            $this->driver = new Pngquant($this->_config);
+        }
+        if (in_array($ext, ['tga', 'bmp', 'ppm', 'jpeg', 'jpg'])) {
+            $this->driver = new Mozjpeg($this->_config);
         } else {
             $this->driver = new Guetzli($this->_config);
         }
         return $this->driver->zip($input, $output);
+    }
+
+    /**
+     * 获取错误消息
+     *
+     * @return string 错误消息
+     */
+    public function getError()
+    {
+        return $this->error;
     }
 
     /**

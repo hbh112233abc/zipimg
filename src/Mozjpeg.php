@@ -28,10 +28,10 @@ class Mozjpeg extends Compress
     {
         return sprintf(
             '%s -quality %d -outfile %s %s',
-            $this->handle,
+            self::safePath($this->handle),
             $this->config['max_quality'],
-            escapeshellarg($this->output),
-            escapeshellarg($this->input)
+            self::safePath($this->output),
+            self::safePath($this->input)
         );
     }
 }

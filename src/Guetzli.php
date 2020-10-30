@@ -13,7 +13,7 @@ class Guetzli extends Compress
     public static function winHandle()
     {
         //返回windows环境下压缩器路径
-        return __DIR__ . '/../lib/gueztli/gueztli.exe';
+        return __DIR__ . '/../lib/guetzli/guetzli.exe';
     }
 
     /**
@@ -23,12 +23,13 @@ class Guetzli extends Compress
      */
     public function parseCmd()
     {
+        $quality = max(84, $this->config['max_quality']);
         return sprintf(
             '%s --quality %d %s %s',
-            $this->handle,
-            $this->config['max_quality'],
-            escapeshellarg($this->output),
-            escapeshellarg($this->input)
+            self::safePath($this->handle),
+            $quality,
+            self::safePath($this->input),
+            self::safePath($this->output)
         );
     }
 }
