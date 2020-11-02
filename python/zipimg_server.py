@@ -6,8 +6,8 @@ import os
 import json
 import platform
 import shutil
-import subprocess
 
+import envoy
 
 from transmit.server import Server
 
@@ -55,8 +55,9 @@ class ZipimgServer(Server):
         if not out_img:
             out_img = in_img
 
+        bk_img = in_img
         if config.get('backup', True):
-            self.backup(in_img)
+            bk_img = self.backup(in_img)
 
         if ext == '.png':
             print('use pngquant')
@@ -69,7 +70,7 @@ class ZipimgServer(Server):
             print('use guetzli')
             driver = Guetzli(**config)
 
-        res = driver.zip(in_img, out_img)
+        res = driver.zip(bk_img, out_img)
         return out_img
 
     def backup(self, in_img, bk_img=''):
@@ -83,73 +84,93 @@ class ZipimgServer(Server):
         """
         if not bk_img:
             bk_img = in_img + '.bk'
-        return shutil.copy(in_img, bk_img)
+        shutil.copy(in_img, bk_img)
+        print('backup_image:', bk_img)
+        return bk_img
 
 
-class Pngquant():
+class ZipDriver():
     def __init__(self, **kw):
+        self.config = kw
+
+    @staticmethod
+    def safePath(path):
+        return path.replace('\\', '/')
+
+    def run(self, cmd):
+        print(cmd)
+        result = envoy.run(cmd)
+        print(result.status_code, result.std_out, result.std_err)
+        return result.status_code
+
+
+class Pngquant(ZipDriver):
+    def __init__(self, **kw):
+        super().__init__(**kw)
         self.app = 'pngquant'
         if is_win():
             win_lib_path = kw.get('win_lib_path',
                                   './vendor/bingher/zipimg/lib/')
             self.app = os.path.join(win_lib_path, 'pngquant', 'pngquant.exe')
-        self.config = kw
+            self.app = self.safePath(self.app)
 
     def zip(self, in_img, out_img):
+        in_img = self.safePath(in_img)
+        out_img = self.safePath(out_img)
         cmd = '{} --quality={}-{} --output="{}" --force "{}"'.format(
             self.app, self.config.get('min_quality', 60),
             self.config.get('max_quality', 80), out_img, in_img)
-        result = subprocess.Popen(cmd)
-        print(cmd)
-        return result
+        return self.run(cmd)
 
 
-class Guetzli():
+class Guetzli(ZipDriver):
     def __init__(self, **kw):
+        super().__init__(**kw)
         self.app = 'guetzli'
         if is_win():
             win_lib_path = kw.get('win_lib_path',
                                   './vendor/bingher/zipimg/lib/')
             self.app = os.path.join(win_lib_path, 'guetzli', 'guetzli.exe')
-        self.config = kw
+            self.app = self.safePath(self.app)
 
     def zip(self, in_img, out_img):
+        in_img = self.safePath(in_img)
+        out_img = self.safePath(out_img)
         quality = max(84, self.config.get('max_quality', 84))
         cmd = '{} --quality {} "{}" "{}"'.format(self.app, quality, in_img,
-                                             out_img)
-        print(cmd)
-        result = subprocess.Popen(cmd)
-        return result
+                                                 out_img)
+        return self.run(cmd)
 
 
-class Mozjpeg():
+class Mozjpeg(ZipDriver):
     def __init__(self, **kw):
+        super().__init__(**kw)
         self.app = 'cjpeg'
         if is_win():
             win_lib_path = kw.get('win_lib_path',
                                   './vendor/bingher/zipimg/lib/')
             self.app = os.path.join(win_lib_path, 'mozjpeg',
                                     'cjpeg-static.exe')
-        self.config = kw
+            self.app = self.safePath(self.app)
 
     def zip(self, in_img, out_img):
+        in_img = self.safePath(in_img)
+        out_img = self.safePath(out_img)
         cmd = '{} -quality {} -outfile "{}" "{}"'.format(
             self.app, self.config.get('max_quality', 80), out_img, in_img)
-        result = subprocess.Popen(cmd)
-        print(cmd)
-        return result
+        return self.run(cmd)
 
 
 if __name__ == "__main__":
     zip_server = ZipimgServer()
-    zip_server.config(**{'win_lib_path':'../lib/'})
+    zip_server.config(**{'win_lib_path': '../lib/'})
 
     # in_img = '../test/input/1.jpg'
     # out_img = '../test/output/1_test.jpg'
     # zip_server.zip(in_img, out_img)
 
     # in_img = '../test/input/3.png'
-    # out_img = '../test/output/3_test.png'
+    # out_img = '../test/output/3.png'
     # zip_server.zip(in_img, out_img)
 
     zip_server.run()
