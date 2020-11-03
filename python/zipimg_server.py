@@ -69,8 +69,13 @@ class ZipimgServer(Server):
         else:
             print('use guetzli')
             driver = Guetzli(**config)
-
+        old_size = os.path.getsize(in_img)
         res = driver.zip(bk_img, out_img)
+        new_size = os.path.getsize(out_img)
+
+        print(
+            f'zip result:{round(old_size/1024,2)}KB->{round(new_size/1024,2)}KB')
+        print(f'zip rate:{round(new_size/old_size*100,2)}%')
         return out_img
 
     def backup(self, in_img, bk_img=''):
