@@ -21,8 +21,6 @@ class AutoZipimg(FileSystemEventHandler):
         self.zipimg = ZipimgServer()
         if not app_path and is_win():
             raise Exception('windows env must set app_path')
-        if not os.path.isdir(app_path):
-            raise Exception(f'app_path not exists:{app_path}')
 
         self.zipimg.config(**{'win_lib_path': app_path})
 
