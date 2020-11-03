@@ -10,6 +10,9 @@ composer require bingher/zipimg
 $input = 'path-of-image';
 $zipimg = new \bingher\zipimg\Image();
 $zipimg->zip($input);
+
+# 助手函数
+zipimg($input);
 ```
 
 ### 注意事项
@@ -66,3 +69,50 @@ $zipimg->zip($input);
      make && make install
      ln -s /usr/local/mozjpeg/bin/cjpeg /usr/local/bin/cjpeg
      ```
+
+### python服务
+
+#### 1. php客户端远程调用python服务端进行图片压缩
+
+> 由于生产环境php一般会禁用执行命令行等危险函数,可以考虑用开启python服务端,然后php进行调用实现图片压缩
+
+- 进入`vendor/bingher/zipimg/python`目录
+- 安装python库
+```
+pip install -r requirement.txt
+```
+- 开启服务
+```
+python zipimg_server.py
+```
+- 远程调用
+```
+<?php
+require_once '../vendor/autoload.php';
+
+use bingher\transmit\Client;
+
+$client = new Client('127.0.0.1', 8000);
+$params = [
+    'in_img'  => __DIR__ . '/input/1.jpg',
+    'out_img' => __DIR__ . '/output/1.test.jpg',
+];
+$result = $client->zip($params);
+var_dump($result);
+
+# 助手函数
+$input = __DIR__ . '/input/1.jpg';
+$result = remote_zipimg($input);
+var_dump($result);
+```
+
+#### 2. python自动监控压缩图片
+>
+```
+python ./auto_zipimg.py -w ../test/output -a ../lib/ -p
+```
+|参数|必须|说明|
+|-|-|-|
+|`-w` 或 `--watch-dir`|Y|监控目录
+|`-a` 或 `--app-path`|N|windows环境下如果移动了`auto_zipimg.py`需要指定压缩软件的目录为`vendor/bingher/zipimg/lib`|
+|`-p`|N|表示运行后会对监控目录原先的图片文件进行遍历压缩一遍|
