@@ -85,8 +85,9 @@ def main():
     is_daemon = False
     try:
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, "hpdw:a:",
-                                   ["watch_dir=", "app_path="])
+        opts, args = getopt.getopt(
+            argv, "hpdw:a:",
+            ["help", "prior", "daemon", "watch_dir=", "app_path="])
     except getopt.GetoptError:
         print('auto_zipimg.py -w <watch_dir> -a <app_path> [-p] [-d]')
         sys.exit(2)
