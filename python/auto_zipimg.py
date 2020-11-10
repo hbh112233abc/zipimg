@@ -8,7 +8,6 @@ import sys
 import os
 import getopt
 import time
-import daemon
 
 from watchdog.observers import Observer
 from watchdog.events import *
@@ -119,7 +118,8 @@ def main():
     if prior:
         prior_zipimg(watch_dir, app_path)
 
-    if is_daemon:
+    if is_daemon and not is_win():
+        import daemon
         with daemon.DaemonContext():
             watch(watch_dir, app_path)
 
